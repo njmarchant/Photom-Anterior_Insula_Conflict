@@ -21,8 +21,8 @@ outputFileName_Late = 'collated_conflict_LATE_phase_data.mat';
 % 3. Define the rules for sorting sessions into phases
 % -- Session IDs for each phase --
 % General Rules
-conf_early_sessions = {'C01','C02','C03','C04'};
-conf_late_sessions = {'C12','C13','C14','C15'};
+conf_early_sessions = {'C01','C02','C03','C04','C05'};
+conf_late_sessions = {'C11','C12','C13','C14','C15'};
 % Exception for Rat R11
 R11_conf_late_sessions = {'C08','C07','C06','C05'};
 % ========================================================================

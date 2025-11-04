@@ -10,10 +10,10 @@ close all;
 %  USER SETTING: Define the phase of the experiment here
 %  Options are: 'reward_only', 'reward_punish', 'conflict'
 %  ========================================================================
-experimentPhase = 'conflict'; %<-- SET THIS VARIABLE
+experimentPhase = 'reward_punish'; %<-- SET THIS VARIABLE
 
 % Define where the data is located
-tankfolder = 'C:\Photometry\Conflict_02 Photom\Conflict_02bc\conf_(10-45)';
+tankfolder = 'C:\Photometry\Conflict_02 Photom\Conflict_02bc\punDS_(25-15)';
 
 % Load individual session data
 filePath = fullfile(tankfolder);
