@@ -89,7 +89,7 @@ disp('All files processed. Now generating final summaries...');
 
 %% Process and Save EARLY Phase Data
 if ~isempty(collated_early_table)
-    %% MODIFIED: Temporarily group all response types for summary calculation
+    %% Temporarily group all response types for summary calculation
     % Create a temporary table for grouping
     summary_grouping_table_early = collated_early_table;
     % Find all rows that are a type of response (not an omission)
@@ -120,7 +120,7 @@ end
 
 %% Process and Save LATE Phase Data
 if ~isempty(collated_late_table)
-    %% MODIFIED: Temporarily group all response types for summary calculation
+    %% Temporarily group all response types for summary calculation
     % Create a temporary table for grouping
     summary_grouping_table_late = collated_late_table;
     % Find all rows that are a type of response (not an omission)

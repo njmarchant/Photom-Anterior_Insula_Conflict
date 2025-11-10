@@ -98,7 +98,7 @@ disp('All files processed. Now generating final summaries...');
 
 %% Process and Save EARLY Phase Data
 if ~isempty(collated_early_table)
-    %% MODIFIED: Added 'Latency' to the list of variables to average
+    
     vars_to_summarize = {'Latency', 'ZMean_BL', 'ZMean_Cue5s', 'ZMean_Cue10s', 'ZMean_CueFull', 'ZMean_Lever'};
     
     summary_early = groupsummary(collated_early_table, {'Rat', 'TrialType', 'Response'}, 'mean', vars_to_summarize);
@@ -122,7 +122,7 @@ end
 
 %% Process and Save LATE Phase Data
 if ~isempty(collated_late_table)
-    %% MODIFIED: Added 'Latency' to the list of variables to average
+    
     vars_to_summarize = {'Latency', 'ZMean_BL', 'ZMean_Cue5s', 'ZMean_Cue10s', 'ZMean_CueFull', 'ZMean_Lever'};
     
     summary_late = groupsummary(collated_late_table, {'Rat', 'TrialType', 'Response'}, 'mean', vars_to_summarize);
