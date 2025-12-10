@@ -6,7 +6,7 @@
 clear all;
 close all;
 % Define the folder to iterate through
-tankfolder = 'C:\Photometry\Conflict_04\Pun';
+tankfolder = 'C:\Photometry\Conflict_04\Conf_(10-40)';
 filePath = fullfile(tankfolder);
 filesAndFolders = dir(fullfile(filePath));
 files = filesAndFolders(~[filesAndFolders.isdir]); 

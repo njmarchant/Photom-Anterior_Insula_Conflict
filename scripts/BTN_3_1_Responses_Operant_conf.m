@@ -13,28 +13,12 @@ Conf_Resp_F = [];
 Conf_Resp_S = [];
 
 tmp = [];
+condition = 'Conf Late';
 
-%Remove rats if they should be excluded for some reason
-% R18 and R21 should be removed based on lack of reliable signal 'R18','R21',
+
+% R18 and R21 should be removed based on inspection of the daily traces
 Rat = {'R09','R10','R11','R12','R13','R14','R15','R16','R17','R19','R20','R22','R23', 'R24'};
 
-
-Post_Tests = {'C23', 'C24', 'C25', 'C26'};
-% Test options are: Saline Alcohol_Low Alcohol_High
-Test = {'Alcohol_High'};
-
-
-rewardsignal_Rat = {'R09','R12','R14','R16','R20','R22','R24'};
-punsignal_Rat = {'R17','R19','R23'};
-nocuesignal_Rat = {'R10','R13','R15','R18','R21'};
-
-lowconf_Rat = {'R24','R12','R15','R21','R20','R10','R22','R14'};
-highconf_Rat = {'R17','R23','R09','R18','R16','R13','R19','R11'};
-
-
-conf_all = {'C01','C02','C03','C04','C05','C06','C07','C08','C09','C10','C12','C13','C14','C15'};  %Remove ,'C11'
-
-condition = 'Conf Early';
 s=char(condition);
 if strcmp(condition,'Conf Early')
     included_sessions = {'C01','C02','C03','C04'};  

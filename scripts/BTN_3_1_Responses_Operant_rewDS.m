@@ -3,8 +3,7 @@
 %% define where the stuff is
 
 clear all
-tankfolder = 'C:\Photometry\Conflict_02 Photom\Conflict_02bc\resp_rewDSvpunDS';
-condition = 'Pun Late';
+tankfolder = 'C:\Photometry\Conflict_02 Photom\Conflict_02bc\rewDS_(25-15)';
 
 filePath = fullfile(tankfolder);
 allDat = cell(1,1);
@@ -13,14 +12,12 @@ Pun_Resp = [];
 
 tmp = [];
 
-rew_all = {'R01','R02','R03','P04','R05'};
-if strcmp(condition,'Pun Early')
-    included_sessions = {'P01','P02', 'P03'};
-else
-    included_sessions = {'P08','P09','P10'};
-end
-s=char(condition);
 
+rew_all = {'R01','R02','R03','P04','R05'};
+
+
+
+%Rat = {'R01','R02','R05','R06','R07','R08','R09','R10'};
 % R18 and R21 should be removed based on inspection of the daily traces
 Rat = {'R09','R10','R11','R12','R13','R14','R15','R16','R17','R19','R20','R22','R23', 'R24'};
 
@@ -41,18 +38,12 @@ for i = 1:length(files) %iterate through experiment folder
              if isnan(sesdat.traces_z(j,5))
              elseif sesdat.traces_z(j, 2) == 5
                 Rew_Resp = [Rew_Resp; sesdat.traces_z(j, 5:end)];
+                    
              end
-        end
-    end
-    if ismember(rat,Rat) && any(strcmp(session, included_sessions)) 
-        for j = 1:size(sesdat.traces_z, 1)
-             if isnan(sesdat.traces_z(j,5))
-             elseif sesdat.traces_z(j, 2) == 5
-                Pun_Resp = [Pun_Resp; sesdat.traces_z(j, 5:end)];
-             end
-        end
+         end
     end
 end
+
 
 
  %% 
@@ -76,12 +67,9 @@ end
  
     time = linspace(-25, 15, size(Rew_Resp, 2));
     Rew_completed = num2str(size(Rew_Resp,1));
-    Rew_Resp_label = ['rewDS trial during reward phase (', Rew_completed,')'];
+    Rew_Resp_label = ['Reward completions (', Rew_completed,')'];
     
-    Pun_completed = num2str(size(Pun_Resp,1));
-    Pun_Resp_label = ['rewDS trial during ', s, ' (', Pun_completed,')'];
-
-    
+        
 
             %------STATS -----------------------------------------------------------------------
 
@@ -89,31 +77,26 @@ end
 tmp = bootstrap_data(Rew_Resp, 5000, 0.001);
 btsrp.rew = CIadjust(tmp(1,:),tmp(2,:),tmp,size(Rew_Resp, 1),2);
 
-tmp = bootstrap_data(Pun_Resp, 5000, 0.001);
-btsrp.pun = CIadjust(tmp(1,:),tmp(2,:),tmp,size(Pun_Resp, 1),2);
-
-
-
 % %permutation tests
 
-[perm.rewC_punC, ~] = permTest_array(Rew_Resp, Pun_Resp, 1000);
+[perm.rewC_rewC, ~] = permTest_array(Rew_Resp, Rew_Resp, 1000);
 
 
 
-% %-----------------------------------------------------Plot Reward v Punish  Responses  -----------------------------------------------------------------------
+% %-----------------------------------------------------Plot Reward Responses  -----------------------------------------------------------------------
 % 
 %Statistical parameters
 p = 0.01;
 thres = 8;
 
 figure
-datasets = {Rew_Resp, Pun_Resp};
-labels = {Rew_Resp_label, Pun_Resp_label};
-colors = {green, light_green};
+datasets = {Rew_Resp};
+labels = {Rew_Resp_label};
+colors = {green};
 
-boottests = {'rew', 'pun'};
+boottests = {'rew'};
 offsetsboot = [0, -0.1, -0.2, -0.3, -0.4, -0.5, -0.6, -0.7];
-permtests = {'rewC_punC'};
+permtests = {'rewC_rewC'};
 offsetsperm = [-1.0, -1.1, -1.2, -1.3];
 markersperm = {black1, black2, black3, black4};
 
@@ -154,5 +137,5 @@ end
 yLimits = ax.YLim;
 line([ax.XLim(1), ax.XLim(2)], [0, 0], 'Color', 'black', 'HandleVisibility', 'off');
 line([0, 0], [yLimits(1), yLimits(2)], 'Color', 'black', 'HandleVisibility', 'off');
-title('Lever presses Reward v ', s);  
+title('Reward phase, rewDS - Lever Press');  
 

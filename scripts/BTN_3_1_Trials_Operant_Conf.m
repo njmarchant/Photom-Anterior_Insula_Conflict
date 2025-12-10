@@ -3,7 +3,7 @@
 
 %% define where the stuff is
 clear all
-tankfolder = 'C:\Photometry\Conflict_02 Photom\Conflict_02bc\conf_(10-30)';
+tankfolder = 'C:\Photometry\Conflict_02 Photom\Conflict_02bc\conf_(10-45)';
 filePath = fullfile(tankfolder);
 allDat = cell(1,1);
 Rew_Trial = [];

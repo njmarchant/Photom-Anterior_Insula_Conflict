@@ -1,9 +1,9 @@
 %% NM updated for Conflict experiment 
 %% UPDATED: Vectorized Extraction & Function-Based Plotting
 
-%clear all
-tankfolder = 'C:\Photometry\Conflict_04\Pun';
-condition = 'Pun Early';
+clear all
+tankfolder = 'C:\Photometry\Conflict_04\Conf_(10-40)';
+condition = 'Conf Late';
 filePath = fullfile(tankfolder);
 
 % --- Initialize Containers ---
@@ -11,17 +11,25 @@ Rew_Trial = [];
 Rew_Trial_Omit = [];
 Pun_Trial = [];
 Pun_Trial_Omit = [];
+Conf_Trial = [];
+Conf_Trial_Omit = [];
+Rew_Trial_ALL = [];
+Pun_Trial_ALL = [];
+Conf_Trial_ALL = [];
 
 % --- Session and Rat Definitions (Kept from Old Script) ---
-if strcmp(condition,'Pun Early')
-    included_sessions = {'P01','P02', 'P03'};
+if strcmp(condition,'Conf Early')
+    included_sessions = {'C01','C02','C03','C04','C05'}; %
 else
-    included_sessions = {'P08','P09','P10'};
+    included_sessions = {'C06','C07','C08','C09','C10'};
 end
 s = char(condition);
 
-% Conf 04 Rats (Excluded R02, R09)
-Rat = {'R01','R05','R06','R07','R08','R10','R11','R12'};
+% Conf 04 Rats (Excluded R02, R09 'R01',)
+% Terminated Rats: ,'R10','R11'
+% Rat = {'R05','R06','R07','R08','R10','R11','R12','R13','R14'};
+Rat = {'R01','R02','R05','R06','R07','R08','R09','R12','R13','R14'};
+
 
 filesAndFolders = dir(fullfile(filePath));
 files = filesAndFolders(~[filesAndFolders.isdir]); 
@@ -52,7 +60,8 @@ for i = 1:length(files)
         
         is_rew_block = traces(:, 2) == 1;
         is_pun_block = traces(:, 2) == 2;
-        is_response  = traces(:, 4) == 1;
+        is_conf_block = traces(:,2) == 3;
+        is_response  = traces(:, 4) >= 1;
         is_omit      = traces(:, 4) == 0;
         
         % Apply masks and append to master matrices (assuming data starts at col 5)
@@ -60,16 +69,31 @@ for i = 1:length(files)
         % or you can hardcode 5:323 if consistent.
         
         % 1. Reward Trials (Responded)
-        Rew_Trial = [Rew_Trial; traces(valid_rows & is_rew_block & is_response, 5:end)];
+        Rew_Trial = [Rew_Trial; traces(valid_rows & is_rew_block & is_response, 5:323)];
         
         % 2. Reward Omissions
-        Rew_Trial_Omit = [Rew_Trial_Omit; traces(valid_rows & is_rew_block & is_omit, 5:end)];
+        Rew_Trial_Omit = [Rew_Trial_Omit; traces(valid_rows & is_rew_block & is_omit, 5:323)];
         
         % 3. Punishment Trials (Responded)
-        Pun_Trial = [Pun_Trial; traces(valid_rows & is_pun_block & is_response, 5:end)];
+        Pun_Trial = [Pun_Trial; traces(valid_rows & is_pun_block & is_response, 5:323)];
         
         % 4. Punishment Omissions
-        Pun_Trial_Omit = [Pun_Trial_Omit; traces(valid_rows & is_pun_block & is_omit, 5:end)];
+        Pun_Trial_Omit = [Pun_Trial_Omit; traces(valid_rows & is_pun_block & is_omit, 5:323)];
+
+        % 5. Conf Trials (Responded)
+        Conf_Trial = [Conf_Trial; traces(valid_rows & is_conf_block & is_response, 5:323)];
+        
+        % 6. Conflict Omissions
+        Conf_Trial_Omit = [Conf_Trial_Omit; traces(valid_rows & is_conf_block & is_omit, 5:323)];
+
+        % 7. Reward ALL
+        Rew_Trial_ALL = [Rew_Trial_ALL; traces(valid_rows & is_rew_block , 5:323)];
+        
+        % 8. Punishment ALL
+        Pun_Trial_ALL = [Pun_Trial_ALL; traces(valid_rows & is_pun_block , 5:323)];
+        
+        % 9. Punishment ALL
+        Conf_Trial_ALL = [Conf_Trial_ALL; traces(valid_rows & is_conf_block , 5:323)];
     end
 end
 fprintf('✅ Data extraction complete.\n');
@@ -91,7 +115,7 @@ colors.black = [0,0,0]; % Used for permutation markers
 % ___________ Dimensions ______________
 % Assuming traces are consistent length, create time vector from -10 to 40
 if ~isempty(Rew_Trial)
-    time = linspace(-10, 40, size(Rew_Trial, 2));
+    time = linspace(-10, 10, size(Rew_Trial, 2));
 else
     error('No data found for the selected rats/sessions.');
 end
@@ -109,8 +133,7 @@ fprintf('Generating plots...\n');
 % --- Plot 1: Reward Trials (Responded vs Omitted) ---
 % Matches "Plot Reward" section
 createComparisonPlot(Rew_Trial, Rew_Trial_Omit, ...
-    ['rewDS Trial - responded (', num2str(size(Rew_Trial,1)), ')'], ...
-    ['rewDS Trial - omitted (', num2str(size(Rew_Trial_Omit,1)), ')'], ...
+    ['rewDS Trial - responded'], ['rewDS Trial - omitted '], ...
     colors.green, colors.light_green, colors.black, ...
     ['rewDS Trials - ', s], ...
     time, p_val, thres, y_range);
@@ -118,28 +141,66 @@ createComparisonPlot(Rew_Trial, Rew_Trial_Omit, ...
 % --- Plot 2: Punish Trials (Responded vs Omitted) ---
 % Matches "Plot Punish Trials" section
 createComparisonPlot(Pun_Trial, Pun_Trial_Omit, ...
-    ['punDS Trial - responded (', num2str(size(Pun_Trial,1)), ')'], ...
-    ['punDS Trial - omitted (', num2str(size(Pun_Trial_Omit,1)), ')'], ...
+    ['punDS Trial - responded '], ...
+    ['punDS Trial - omitted '], ...
     colors.red, colors.pink, colors.black, ...
     ['punDS Trials - ', s], ...
     time, p_val, thres, y_range);
 
-% --- Plot 3: Completed Trials (Reward vs Punish) ---
+% --- Plot 3: Conflict Trials (Responded vs Omitted) ---
+% Matches "Plot Conflict Trials" section
+createComparisonPlot(Conf_Trial, Conf_Trial_Omit, ...
+    ['Conflict Trial - responded '], ...
+    ['Conflict Trial - omitted '], ...
+    colors.blue, colors.azure, colors.yellow, ...
+    ['Conflict Trials - ', s], ...
+    time, p_val, thres, y_range);
+
+% --- Plot 4: Completed Trials (Reward vs Punish) ---
 % Matches "Plot Reward v Punish Completed Trials" section
 createComparisonPlot(Rew_Trial, Pun_Trial, ...
-    ['rewDS Trial - responded (', num2str(size(Rew_Trial,1)), ')'], ...
-    ['punDS Trial - responded (', num2str(size(Pun_Trial,1)), ')'], ...
+    ['rewDS Trial - responded '], ...
+    ['punDS Trial - responded '], ...
     colors.green, colors.red, colors.black, ...
     ['Completed trials - ', s], ...
     time, p_val, thres, y_range);
 
+% --- Plot 5: Completed Trials (Reward vs Punish) ---
+% Matches "Plot Reward v Punish Completed Trials" section
+createComparisonPlot(Rew_Trial, Pun_Trial, ...
+    ['rewDS Trial - responded '], ...
+    ['punDS Trial - responded '], ...
+    colors.green, colors.red, colors.black, ...
+    ['Completed trials - ', s], ...
+    time, p_val, thres, y_range);
+
+
 % --- Plot 4: Omitted Trials (Reward vs Punish) ---
 % Matches "Plot Reward v Punish omitted Trials" section
 createComparisonPlot(Rew_Trial_Omit, Pun_Trial_Omit, ...
-    ['rewDS Trial - omitted (', num2str(size(Rew_Trial_Omit,1)), ')'], ...
-    ['punDS Trial - omitted (', num2str(size(Pun_Trial_Omit,1)), ')'], ...
+    ['rewDS Trial - omitted '], ...
+    ['punDS Trial - omitted '], ...
     colors.azure, colors.pink, colors.black, ...
     ['Omissions - ', s], ...
+    time, p_val, thres, y_range);
+
+% --- Plot 5: ALL Trials (Reward vs Punish) ---
+% Matches "Plot Reward v Punish ALL Trials" section
+createComparisonPlot(Rew_Trial_ALL, Pun_Trial_ALL, ...
+    ['rewDS Trial - ALL '], ...
+    ['punDS Trial - ALL '], ...
+    colors.green, colors.red, colors.yellow, ...
+    ['ALL - ', s], ...
+    time, p_val, thres, y_range);
+
+% --- Plot 5: ALL Trials (Reward vs Punish) ---
+% Matches "Plot Reward v Punish ALL Trials" section
+createComparisonPlot_3way(Rew_Trial_ALL, Pun_Trial_ALL, Conf_Trial_ALL, ...
+    ['rewDS Trial - ALL '], ...
+    ['punDS Trial - ALL '], ...
+    ['Conf Trial - ALL '], ...
+    colors.green, colors.red, colors.blue, colors.yellow, ...
+    ['ALL - ', s], ...
     time, p_val, thres, y_range);
 
 fprintf('✅ All plots generated.\n');

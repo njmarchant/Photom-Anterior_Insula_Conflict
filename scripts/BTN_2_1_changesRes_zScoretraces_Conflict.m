@@ -7,7 +7,7 @@ close all
 
 %% define where the stuff is
 
-tankfolder = 'C:\Photometry\Conflict_04\Pun';
+tankfolder = 'C:\Photometry\Conflict_04\Raw data\Conf_(25-15)';
 
 %% define timestamps you wanna work with
 %!!!! REMEMBER TO CHECK THE NAMES OF THE VARIABBLES ON SESDAT
@@ -231,8 +231,22 @@ for i = 1:length(files) %iterate through experiment folder
        
 %define time, baseline
 % Ensure that this matches what is extracted in the first script!
+    
+if contains(tankfolder, '25-15')
+    fprintf('Detected 25-15 dataset. z-Score calculcated -25s to -20s of trace \n');
+    time = linspace(-25, 15, size(data, 2)); %time vector the size of trace
+    base = (time >= -25) & (time <= -20); %This is the time period of the trace for which the baseline is calculated
+elseif contains(tankfolder, '10-40')
+    fprintf('Detected 10-40 dataset. z-Score calculcated -10s to -5s of trace \n');
     time = linspace(-10, 40, size(data, 2)); %time vector the size of trace
     base = (time >= -10) & (time <= -5); %This is the time period of the trace for which the baseline is calculated
+elseif contains(tankfolder, '10-45')
+    fprintf('Detected 10-45 dataset. z-Score calculcated -10s to -5s of trace \n');
+    time = linspace(-10, 45, size(data, 2)); %time vector the size of trace
+    base = (time >= -10) & (time <= -5); %This is the time period of the trace for which the baseline is calculated
+else  
+    warning('Time window not recognized in folder path!');
+end
      
 % zscore standardisation on df/f
     zdata = zeros(size(data));

@@ -10,11 +10,12 @@ close all
 %% define where the stuff is
 exp = 'Conflict_04'; 
 tankfolder = 'C:\Photometry\Conflict_04';
-session = 's1';
+session = 's17';
 
-%Conflict 02c = 
-ses = 'R01';
-type = 'Rew';
+late_rats = {'R13','R14'};
+
+
+
 %limits for trace making - the first one is the time before epoch, second one is after (ALWAYS KEEP BOTH POSITIVE)
 % if you want plots of all sessions at the end of the extraction
 time = [10, 40]; %REMEMBER TO CHANGE THIS DEPENDING ON THE XP!!!!!
@@ -28,14 +29,15 @@ db_atten = 90; %decibel attenuation of filters (default = 60)
 exc = 100; %signal to take out for pre-processing (for me is 300s = 5mins)
 
 
-%% individual session data extraction 
-files = dir(fullfile(tankfolder,session));
+%% individual session data extraction
+files_folder = fullfile(tankfolder,'Raw data',session);
+files = dir(fullfile(files_folder));
 files(ismember({files.name}, {'.', '..'})) = [];
 folder_indices = find([files.isdir]);  % Find indices of folders
 files = files(folder_indices);          % Keep only folders in the list
 for i = 1:length(files) %iterate through experiment folder
           fprintf('Extracting %10s \n', files(i).name);     
-          [data, events, ts, conversion] = Sim_TDTextract([tankfolder '\' session '\' files(i).name]); % extract data from both set ups
+          [data, events, ts, conversion] = Sim_TDTextract([files_folder '\' files(i).name]); % extract data from both set ups
           names = strsplit(files(i).name, {'-' , '_'}); %divide the file name into separte character vectors
           %col 1 = Left Top rat
           %col 2 = Left Bottom rat
@@ -110,29 +112,29 @@ for i = 1:length(files) %iterate through experiment folder
     
         %% PREPROCESSING (Fixed)
         % Calculate the index to start at (conversion rate * seconds to exclude)
-        tmp = ceil(conversion * exc); 
-        
+        % tmp = ceil(conversion * exc); 
+        % 
         % Start from the exclusion point and go to the END of the file
-        filt490 = raw490(tmp:end);
-        filt405 = raw405(tmp:end);
+        % filt490 = raw490(tmp:end);
+        % filt405 = raw405(tmp:end);
         
         % Adjust the timestamp vector to match the new shorter data
         % We remove the first 'tmp' timestamps
-        ts = ts(tmp:end);
+        % ts = ts(tmp:end);
         
         %_____ OLD METHOD __________________________
-        %filt490 = raw490;
-        %filt405 = raw405;
+        filt490 = raw490;
+        filt405 = raw405;
 
         % --- FIX SIZE MISMATCH ---
         % Check if lengths differ and truncate to the shorter one
         len490 = length(filt490);
         len405 = length(filt405);
-        
+
         if len490 ~= len405
             min_len = min(len490, len405);
             fprintf('Size mismatch detected (490: %d, 405: %d). Truncating both to %d.\n', len490, len405, min_len);
-            
+
             % Keep indices 1 to min_len (removes the end of the longer array)
             filt490 = filt490(1:min_len);
             filt405 = filt405(1:min_len);
@@ -195,52 +197,41 @@ for i = 1:length(files) %iterate through experiment folder
             end
             sesdat.traces = ev; %save
         
-        %% ______ Code the recorded Hemisphere into sesdat  _______________
-        % %conflict 02b
-        % Left only = R09, R11, R16
-        % Right only = R10, R12, R15
-        % Bilat = R13, R14
-        %     names_2 = strsplit(session, {'-' , '_', ' '}); %divide the file name into separte character vectors
-        %     side = names_2{4};
-        %     Left_rat = {'R09','R11','R13','R15'}; % - From 04-02-24 R13 is always L 
-        %     Right_rat = {'R10','R12','R16'};
-        %     found_L = any(strcmp(r, Left_rat));
-        %     found_R = any(strcmp(r, Right_rat));
-        % % Check if the value was found and code the hemi
-        %     if found_L
-        %         sesdat.hemi = 'Left';
-        %     elseif found_R
-        %         sesdat.hemi = 'Right';
-        %     elseif strcmp(side, '(R)')
-        %         sesdat.hemi = 'Right';
-        %     elseif strcmp(side, '(L)')
-        %         sesdat.hemi = 'Left';
-        %     else
-        %         sesdat.hemi = 'null';
-        %     end
-        
-        
-        
-        
+              
         
         %% ______ Code the session detail into sesdat _______________
+        
+        if ismember(r,late_rats)
+            ses = 'C01';
+            type = sprintf('Conf_(%d-%d)', time);
+
+        else
+            ses = 'C07';
+            type = sprintf('Conf_(%d-%d)', time);
+        end
+        
         sesdat.ses = ses;
+        sesdat.phase = type;
 
         %% _____________ Code descriptive information into sesdat _______________
         sesdat.rat = r;
-        sesdat.phase = type;
+        
         sesdat.date = files(i).name(end-12:end-7);
         
         %% - Save the file
+        % Construct the filename cleanly
         folderName = strcat(tankfolder, '\',type);
-            if ~isfolder(folderName)  % Check if the folder does not exist
-                mkdir(folderName);  % Create the folder
-                save([folderName '\' exp ' ' type ' ' names{5} ' data ' r  '.mat'], 'sesdat')
-            else
-                save([folderName '\' exp ' ' type ' ' names{5} ' data ' r  '.mat'], 'sesdat')
-            end
+        fileName = [exp, ' ', type, ' ', names{5}, ' data ', r, '.mat'];
+        fullPath = fullfile(folderName, fileName);
         
+        % Create folder if needed
+        if ~isfolder(folderName)
+            mkdir(folderName);
+        end
         
+        % Save
+        save(fullPath, 'sesdat');
+       
         clear sesdat; 
         else 
              fprintf('No events for session! Skipping to next session \n')

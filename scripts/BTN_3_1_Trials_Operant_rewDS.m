@@ -3,45 +3,39 @@
 %% define where the stuff is
 
 clear all
-tankfolder = 'C:\Photometry\Conflict_04\Rew';
+tankfolder = 'C:\Photometry\Conflict_02 Photom\Conflict_02bc\rewDS_(10-45)';
 
-filePath = fullfile(tankfolder);
-allDat = cell(1,1);
-Rew_Resp = [];
-Pun_Resp = [];
-
+Rew_Trial = [];
+Rew_Trial_Omit = [];
 tmp = [];
 
+% R18 and R21 should be removed based on inspection of the daily traces
+Rat = {'R09','R10','R11','R12','R13','R14','R15','R16','R17','R19','R20','R22','R23', 'R24'};
+reward_sessions = {'R01','R02','R03','R04', 'R05'};
 
-rew_all = {'R01','R02','R03','P04','R05'};
-
-
-
-Rat = {'R01','R02','R05','R06','R07','R08','R09','R10'};
-
+filePath = fullfile(tankfolder);
 filesAndFolders = dir(fullfile(filePath));
 files = filesAndFolders(~[filesAndFolders.isdir]); 
 files(ismember({files.name}, {'.', '..'})) = [];
 for i = 1:length(files) %iterate through experiment folder
+    load(fullfile(filePath,  [files(i).name]))
+    % side = sesdat.hemi;
+    rat = sesdat.rat;
+    phase = sesdat.phase;
+    session = sesdat.ses;
 
-        load(fullfile(filePath,  [files(i).name]))
-        names = strsplit(files(i).name, {'-' , '_', ' ', '.'}); %divide the file name into separte character vectors
-        side = sesdat.hemi;
-        rat = sesdat.rat;
-        phase = sesdat.phase;
-        session = sesdat.ses;
-        % conf_percent = dat.sesdat.responses(3,3);
-    if ismember(rat,Rat) && any(strcmp(session, rew_all)) 
+    if ismember(rat,Rat) %&& any(strcmp(session, reward_sessions))
         for j = 1:size(sesdat.traces_z, 1)
              if isnan(sesdat.traces_z(j,5))
-             elseif sesdat.traces_z(j, 2) == 5
-                Rew_Resp = [Rew_Resp; sesdat.traces_z(j, 5:end)];
-                    
+             elseif sesdat.traces_z(j, 2) == 1 && sesdat.traces_z(j, 4) == 1 
+                Rew_Trial = [Rew_Trial; sesdat.traces_z(j, 5:323)];
+             elseif sesdat.traces_z(j, 2) == 1 && sesdat.traces_z(j, 4) == 0 
+                Rew_Trial_Omit = [Rew_Trial_Omit; sesdat.traces_z(j, 5:323)];
+
              end
-         end
+        end
     end
 end
-
 
 
  %% 
@@ -63,40 +57,39 @@ end
 
 %___________ Dimensions and labels used for the plots ______________
  
-    time = linspace(-25, 15, size(Rew_Resp, 2));
-    Rew_completed = num2str(size(Rew_Resp,1));
-    Rew_Resp_label = ['Reward completions (', Rew_completed,')'];
-    
-        
+    time = linspace(-10, 10, size(Rew_Trial, 2));
+    Rew_Trial_completed = num2str(size(Rew_Trial,1));
+    Rew_Trial_label = ['rewDS trial responded (', Rew_Trial_completed,')'];
+    Rew_Trial_Omitted = num2str(size(Rew_Trial_Omit,1));
+    Rew_Omit_Trial_label = ['rewDS trial omitted (', Rew_Trial_Omitted,')'];
 
-            %------STATS -----------------------------------------------------------------------
+%------STATS -----------------------------------------------------------------------
 
 % %bootstrap 
-tmp = bootstrap_data(Rew_Resp, 5000, 0.001);
-btsrp.rew = CIadjust(tmp(1,:),tmp(2,:),tmp,size(Rew_Resp, 1),2);
+tmp = bootstrap_data(Rew_Trial, 5000, 0.001);
+btsrp.rew = CIadjust(tmp(1,:),tmp(2,:),tmp,size(Rew_Trial, 1),2);
+tmp = bootstrap_data(Rew_Trial_Omit, 5000, 0.001);
+btsrp.rewOmit = CIadjust(tmp(1,:),tmp(2,:),tmp,size(Rew_Trial_Omit, 1),2);
 
 % %permutation tests
+[perm.rewC_rewO, ~] = permTest_array(Rew_Trial, Rew_Trial_Omit, 1000);
 
-[perm.rewC_rewC, ~] = permTest_array(Rew_Resp, Rew_Resp, 1000);
-
-
-
-% %-----------------------------------------------------Plot Reward Responses  -----------------------------------------------------------------------
-% 
+%-----------------------------------------------------Plot Reward  -----------------------------------------------------------------------
+ 
 %Statistical parameters
-p = 0.01;
+p = 0.05;
 thres = 8;
 
 figure
-datasets = {Rew_Resp};
-labels = {Rew_Resp_label};
-colors = {green};
+datasets = {Rew_Trial, Rew_Trial_Omit};
+labels = {Rew_Trial_label, Rew_Omit_Trial_label};
+colors = {green, light_green};
 
-boottests = {'rew'};
-offsetsboot = [0, -0.1, -0.2, -0.3, -0.4, -0.5, -0.6, -0.7];
-permtests = {'rewC_rewC'};
-offsetsperm = [-1.0, -1.1, -1.2, -1.3];
-markersperm = {black1, black2, black3, black4};
+boottests = {'rew', 'rewOmit'};
+offsetsboot = [0, -0.1, -0.2, -0.3];
+permtests = {'rewC_rewO'};
+offsetsperm = -0.5;
+markersperm = {yellow, black2, black3};
 
 handles = zeros(1, numel(datasets)*2); % Preallocate handles
 for i = 1:length(colors)
@@ -135,5 +128,5 @@ end
 yLimits = ax.YLim;
 line([ax.XLim(1), ax.XLim(2)], [0, 0], 'Color', 'black', 'HandleVisibility', 'off');
 line([0, 0], [yLimits(1), yLimits(2)], 'Color', 'black', 'HandleVisibility', 'off');
-title('Reward phase, rewDS - Lever Press');  
-
+line([10, 10], [yLimits(1), yLimits(2)], 'Color', 'black', 'HandleVisibility', 'off');
+title('rewDS Trials in Reward phase');  

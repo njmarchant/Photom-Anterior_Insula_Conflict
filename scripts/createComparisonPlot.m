@@ -97,7 +97,20 @@ function [sig_windows] = createComparisonPlot(data1, data2, label1, label2, colo
             
     TimeWindows = [win.boot1_pos; win.boot1_neg; win.boot2_pos; win.boot2_neg; win.perm];
 
-    sig_windows = table(TestType, TimeWindows(:,1), TimeWindows(:,2), 'VariableNames', {'Test', 'StartTime_s', 'EndTime_s'});
+    %sig_windows = table(TestType, TimeWindows(:,1), TimeWindows(:,2), 'VariableNames', {'Test', 'StartTime_s', 'EndTime_s'});
+    
+    % --- Find this section in createComparisonPlot.m (around line 95-100) ---
+
+    % Check if TimeWindows exists and is not empty
+    if exist('TimeWindows', 'var') && ~isempty(TimeWindows)
+        % Create the table as normal
+        sig_windows = table(TestType, TimeWindows(:,1), TimeWindows(:,2), ...
+            'VariableNames', {'Test', 'StartTime_s', 'EndTime_s'});
+    else
+        % Create an empty table or a placeholder to prevent the crash
+        warning('No significant time windows found for this comparison.');
+        sig_windows = table({}, [], [], 'VariableNames', {'Test', 'StartTime_s', 'EndTime_s'});
+    end
 
     % --- 5. Finalize Plot Aesthetics ---
     line([0, 0], yLimits, 'Color', [0.5 0.5 0.5], 'LineStyle', '--');

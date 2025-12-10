@@ -1,22 +1,29 @@
-%% Isis Alonso-Lozares 16-06-21 script to combine data from different animals
-%% NM updated for social reward experiment 15-05-23
+%% NM updated for Conflict experiment 
 %% UPDATED: Vectorized Extraction & Function-Based Plotting
 
 clear all
-tankfolder = 'C:\Photometry\Conflict_04\Rew';
-condition = 'Reward';
+tankfolder = 'C:\Photometry\Conflict_04\Pun_(25-15)';
+condition = 'Pun Early';
 filePath = fullfile(tankfolder);
 
 % --- Initialize Containers ---
 Rew_Trial = [];
 Rew_Trial_Omit = [];
-
+Pun_Trial = [];
+Pun_Trial_Omit = [];
 
 % --- Session and Rat Definitions (Kept from Old Script) ---
+if strcmp(condition,'Pun Early')
+    included_sessions = {'P01','P02','P03'}; %
+else
+    included_sessions = {'P04','P05','P06','P07'};
+end
 s = char(condition);
 
-% Conf 04 Rats (Excluded R02, R09)
-Rat = {'R01','R05','R06','R07','R08','R10','R11','R12'};
+% Conf 04 Rats (Excluded R02, R09 'R01',)
+% Rat = {'R05','R06','R07','R08','R10','R11','R12'};
+Rat = {'R01','R02','R05','R06','R07','R08','R09','R10','R11','R12','R13','R14'};
+
 
 filesAndFolders = dir(fullfile(filePath));
 files = filesAndFolders(~[filesAndFolders.isdir]); 
@@ -34,7 +41,7 @@ for i = 1:length(files)
     traces = sesdat.traces_z; % Extract for cleaner code
     
     % Check if this specific Rat and Session are in our include list
-    if ismember(rat, Rat) 
+    if ismember(rat, Rat) && any(strcmp(session, included_sessions))
         fprintf('Processing %s - %s\n', rat, session);
         
         % --- New Vectorized Method ---
@@ -45,21 +52,21 @@ for i = 1:length(files)
         
         valid_rows = ~isnan(traces(:, 5));
         
-        is_rew_block = traces(:, 2) == 1;
-        is_response  = traces(:, 4) == 1;
-        is_omit      = traces(:, 4) == 0;
-        
+        is_rew_block = traces(:, 2) == 5;
+        is_pun_block = traces(:, 2) == 6;
+                
         % Apply masks and append to master matrices (assuming data starts at col 5)
         % Note: Using 5:end to match "size(Rew_Trial, 2)" logic later, 
         % or you can hardcode 5:323 if consistent.
         
-        % 1. Reward Trials (Responded)
-        Rew_Trial = [Rew_Trial; traces(valid_rows & is_rew_block & is_response, 5:end)];
+        % 1. Rewards (Responded)
+        Rew_Trial = [Rew_Trial; traces(valid_rows & is_rew_block , 5:end)];
         
-        % 2. Reward Omissions
-        Rew_Trial_Omit = [Rew_Trial_Omit; traces(valid_rows & is_rew_block & is_omit, 5:end)];
+                
+        % 3. Punishments (Responded)
+        Pun_Trial = [Pun_Trial; traces(valid_rows & is_pun_block , 5:end)];
         
-        
+
     end
 end
 fprintf('✅ Data extraction complete.\n');
@@ -81,7 +88,7 @@ colors.black = [0,0,0]; % Used for permutation markers
 % ___________ Dimensions ______________
 % Assuming traces are consistent length, create time vector from -10 to 40
 if ~isempty(Rew_Trial)
-    time = linspace(-10, 40, size(Rew_Trial, 2));
+    time = linspace(-25, 15, size(Rew_Trial, 2));
 else
     error('No data found for the selected rats/sessions.');
 end
@@ -92,19 +99,18 @@ thres = 8;
 y_range = [-2, 6]; % Adjust this based on your Z-score range
 
 %% 3. Generate Plots 
-% We replace the 1 blocks with calls to your helper function.
+% We replace the 4 repetitive blocks with calls to your helper function.
 
 fprintf('Generating plots...\n');
 
-% --- Plot 1: Reward Trials (Responded vs Omitted) ---
-% Matches "Plot Reward" section
-createComparisonPlot(Rew_Trial, Rew_Trial_Omit, ...
-    ['rewDS Trial - responded (', num2str(size(Rew_Trial,1)), ')'], ...
-    ['rewDS Trial - omitted (', num2str(size(Rew_Trial_Omit,1)), ')'], ...
-    colors.green, colors.light_green, colors.yellow, ...
-    ['rewDS Trials - ', s], ...
+% --- Plot 1: Completed Trials (Reward vs Punish) ---
+% Matches "Plot Reward v Punish Completed Trials" section
+createComparisonPlot(Rew_Trial, Pun_Trial, ...
+    ['rewDS Trial - responded '], ...
+    ['punDS Trial - responded '], ...
+    colors.green, colors.red, colors.black, ...
+    ['Completed trials - ', s], ...
     time, p_val, thres, y_range);
-
 
 
 fprintf('✅ All plots generated.\n');
