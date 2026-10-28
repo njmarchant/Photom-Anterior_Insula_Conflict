@@ -80,13 +80,13 @@ function [sig_windows] = createComparisonPlot_3way(data1, data2, data3, ...
     % Define offsets for markers (Stacked from bottom up)
     % We have many markers now, so we stack them carefully
     % Permutations at the very bottom, Bootstraps above
-    offsets.perm_2v3  = 0.2;
-    offsets.perm_1v3  = 0.4;
-    offsets.perm_1v2  = 0.6;
+    offsets.perm_2v3  = 0.1;
+    offsets.perm_1v3  = 0.2;
+    offsets.perm_1v2  = 0.3;
     
-    offsets.boot3_pos = 0.9; offsets.boot3_neg = 0.8;
-    offsets.boot2_pos = 1.2; offsets.boot2_neg = 1.1;
-    offsets.boot1_pos = 1.5; offsets.boot1_neg = 1.4;
+    offsets.boot3_pos = 0.5; offsets.boot3_neg = 0.55;
+    offsets.boot2_pos = 0.6; offsets.boot2_neg = 0.65;
+    offsets.boot1_pos = 0.7; offsets.boot1_neg = 0.75;
 
     
     % Find significant indices for BOOTSTRAP

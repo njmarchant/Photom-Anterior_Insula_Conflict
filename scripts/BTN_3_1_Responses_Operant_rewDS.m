@@ -1,141 +1,117 @@
-%% Isis Alonso-Lozares 16-06-21 script to combine data from different animals
-%% NM updated for social reward experiment 15-05-23
-%% define where the stuff is
-
+%% Updated Script 1: Reward Responses with Subject Means
+%% Includes Subject Means, Minimum Trial Threshold and trace cropping
+%% 1. Configuration & Setup
 clear all
-tankfolder = 'C:\Photometry\Conflict_02 Photom\Conflict_02bc\rewDS_(25-15)';
-
+tankfolder = 'C:\Photometry\Conflict_02 Photom\Conflict_02bc\rewDS_(10-45)\with_resp_traces';
 filePath = fullfile(tankfolder);
-allDat = cell(1,1);
-Rew_Resp = [];
-Pun_Resp = [];
 
-tmp = [];
-
-
-rew_all = {'R01','R02','R03','P04','R05'};
-
-
-
-%Rat = {'R01','R02','R05','R06','R07','R08','R09','R10'};
+% Define Subject Groupings & Session Rules
+rew_all = {'R01','R02','R03','R04','R05'};
 % R18 and R21 should be removed based on inspection of the daily traces
 Rat = {'R09','R10','R11','R12','R13','R14','R15','R16','R17','R19','R20','R22','R23', 'R24'};
+% Rat = {'R01','R02','R03','R04','R05','R07','R08'};
+% Rat = {'R01','R03','R04','R05','R08'};
 
+% Create a master list of all unique rats to initialize the data structure
+all_rats = unique(Rat);
+
+% Analysis Parameters
+min_trials = 5;   % Minimum number of trials required per rat to be included
+crop_pre   = 15;  % s before the press to keep
+crop_post  = 15;  % s after the press to keep
+
+% Colours (RGB / 255) from Script 3
+c_rewDS = [0.12, 0.80, 0.01]; % green matching script_3
+c_perm = [0.5, 0.5, 0.5];
+
+%% 2. Initialize Data Structures
+RatData = struct();
+for r = 1:length(all_rats)
+    RatData.(all_rats{r}).Rew_Resp = [];
+end
+
+time_window = [];   % Populated from the first valid file
+n_cols_ref  = [];   % Number of samples every file must match
+
+%% 3. Load and Extract Traces
+fprintf('Loading and extracting data...\n');
 filesAndFolders = dir(fullfile(filePath));
-files = filesAndFolders(~[filesAndFolders.isdir]); 
+files = filesAndFolders(~[filesAndFolders.isdir]);
 files(ismember({files.name}, {'.', '..'})) = [];
-for i = 1:length(files) %iterate through experiment folder
 
-        load(fullfile(filePath,  [files(i).name]))
-        names = strsplit(files(i).name, {'-' , '_', ' ', '.'}); %divide the file name into separte character vectors
-        side = sesdat.hemi;
-        rat = sesdat.rat;
-        phase = sesdat.phase;
-        session = sesdat.ses;
-        % conf_percent = dat.sesdat.responses(3,3);
-    if ismember(rat,Rat) && any(strcmp(session, rew_all)) 
-        for j = 1:size(sesdat.traces_z, 1)
-             if isnan(sesdat.traces_z(j,5))
-             elseif sesdat.traces_z(j, 2) == 5
-                Rew_Resp = [Rew_Resp; sesdat.traces_z(j, 5:end)];
-                    
-             end
-         end
+for i = 1:length(files) % Iterate through experiment folder
+    load(fullfile(filePath, files(i).name), 'sesdat');
+    rat = sesdat.rat;
+    session = sesdat.ses;
+
+    % Check if this specific Rat + Session combination is valid
+    if ismember(rat, Rat) && any(strcmp(session, rew_all))
+
+        traces = sesdat.traces_z_resp;
+
+        % --- Crop to [-crop_pre, +crop_post] s around the press ---
+        t_resp = sesdat.traces_resp_time;
+        i0 = find(abs(t_resp) < 1e-9, 1);                          % sample at the press
+        c0 = i0 - ceil(crop_pre  * sesdat.conversion);
+        c1 = min(i0 + ceil(crop_post * sesdat.conversion), numel(t_resp));
+        trace_cols = 4 + (c0 : c1);                                % +4 skips the header columns
+
+        % All files must have the same number of samples after the crop
+        if isempty(n_cols_ref)
+            n_cols_ref  = numel(trace_cols);
+            time_window = t_resp(c0:c1);                           % exact time axis from the data
+        elseif numel(trace_cols) ~= n_cols_ref
+            fprintf('  SKIP %s: %d samples after crop (expected %d)\n', ...
+                files(i).name, numel(trace_cols), n_cols_ref);
+            continue;
+        end
+
+        % Loop to parse rows safely (ignoring NaNs in the cropped window, checking target code)
+        for j = 1:size(traces, 1)
+            if any(isnan(traces(j, trace_cols)))
+                % Skip row
+            elseif traces(j, 2) == 5
+                RatData.(rat).Rew_Resp = [RatData.(rat).Rew_Resp; traces(j, trace_cols)];
+            end
+        end
     end
 end
 
+%% 4. Calculate Subject Means with Minimum Trial Constraint
+fprintf('Calculating Subject Means (Minimum %d trials required)...\n', min_trials);
+GroupData = struct();
+GroupData.Rew_Resp = [];
 
+for i = 1:length(all_rats)
+    ratID = all_rats{i};
+    traces_rew = RatData.(ratID).Rew_Resp;
+    if size(traces_rew, 1) >= min_trials
+        GroupData.Rew_Resp = [GroupData.Rew_Resp; mean(traces_rew, 1, 'omitnan')];
+    end
+end
 
- %% 
- %___________ colours used for the plots (RGB values / 255)______________
-    purp = [0.36,0.32,0.64];
-    blue = [0.00,0.26,1.00];
-    azure = [0.00,0.62,1.00];
-    red = [1.0,0,0];
-    pink = [1.00,0.50,0.50];
-    orange = [1.00,0.45,0.00];
-    light_orange = [1.00,0.87,0.60];
-    green = [0.10,0.60,0.00];
-    light_green = [0.00,0.50,0.50];
-    yellow = [1.00,0.88,0.00];
-    black1 = [0.75,0.75,0.75];
-    black2 = [0.5,0.5,0.5];
-    black3 = [0.25,0.25,0.25];
-    black4 = [0,0,0];
+%% 5. Plotting via Function Call
+fprintf('Generating Plots...\n');
+if ~isempty(GroupData.Rew_Resp)
+    time = time_window;   % -crop_pre to +crop_post, taken from traces_resp_time
+else
+    error('No trials met the minimum criteria. Check extraction parameters.');
+end
 
-%___________ Dimensions and labels used for the plots ______________
- 
-    time = linspace(-25, 15, size(Rew_Resp, 2));
-    Rew_completed = num2str(size(Rew_Resp,1));
-    Rew_Resp_label = ['Reward completions (', Rew_completed,')'];
-    
-        
-
-            %------STATS -----------------------------------------------------------------------
-
-% %bootstrap 
-tmp = bootstrap_data(Rew_Resp, 5000, 0.001);
-btsrp.rew = CIadjust(tmp(1,:),tmp(2,:),tmp,size(Rew_Resp, 1),2);
-
-% %permutation tests
-
-[perm.rewC_rewC, ~] = permTest_array(Rew_Resp, Rew_Resp, 1000);
-
-
-
-% %-----------------------------------------------------Plot Reward Responses  -----------------------------------------------------------------------
-% 
-%Statistical parameters
-p = 0.01;
+% Plot parameters
+p_val = 0.05;
 thres = 8;
+y_limits = []; % Leave empty for auto-scaling, or set explicitly e.g., [-1 3]
+plot_title = 'Reward phase, rewDS - Lever Press';
 
-figure
-datasets = {Rew_Resp};
-labels = {Rew_Resp_label};
-colors = {green};
+% Note: Since Script 1 only tracks one group (Reward), we pass it against itself
+% or a baseline matrix as needed by your createComparisonPlot architecture.
+sig_windows = createComparisonPlot(...
+    GroupData.Rew_Resp, GroupData.Rew_Resp, ...
+    'Reward completions', 'Reward completions (Ref)', ...
+    c_rewDS, c_rewDS, c_perm, ...
+    plot_title, time, p_val, thres, y_limits);
 
-boottests = {'rew'};
-offsetsboot = [0, -0.1, -0.2, -0.3, -0.4, -0.5, -0.6, -0.7];
-permtests = {'rewC_rewC'};
-offsetsperm = [-1.0, -1.1, -1.2, -1.3];
-markersperm = {black1, black2, black3, black4};
-
-handles = zeros(1, numel(datasets)*2); % Preallocate handles
-for i = 1:length(colors)
-    hold on
-    handles(i) = plot(time, mean(datasets{i}, 1), 'Color', colors{i});
-    jbfill(time, (mean(datasets{i}) - std(datasets{i}, 0, 1) / sqrt(size(datasets{i}, 1))), ...
-        (std(datasets{i}, 0, 1) / sqrt(size(datasets{i}, 1)) + mean(datasets{i})), colors{i}, 'none', 0, 0.2);
-    handles(i+3) = plot(NaN, NaN, 'Color', colors{i}); % Dummy handle for legend
-end
-
-legend(handles(1:length(labels)), labels, 'Location', 'northwest'); % Provide only the handles for mean lines
-ax = gca;
-yLimits = ax.YLim;
-yMin = yLimits(1);
-
-% Plotting markers for bootstrapping
-for i = 1:2:length(boottests)*2
-    tmp = find(btsrp.(boottests{(i+1)/2})(1,:) > 0);   % Find indices for values > 0 (i.e. signal higher than baseline)
-    id = tmp(consec_idx(tmp, thres));
-    plot(time(id), (yMin + offsetsboot(i) * ones(size(time(id), 2), 2)), 's', 'MarkerSize', 7, 'MarkerFaceColor', colors{(i+1)/2}, 'Color', colors{(i+1)/2}, 'HandleVisibility', 'off');
-
-    clear tmp id
-    tmp = find(btsrp.(boottests{(i+1)/2})(2,:) < 0); % Find indices for values < 0 (i.e. signal lower than baseline)
-    id = tmp(consec_idx(tmp, thres));
-    plot(time(id), (yMin + offsetsboot(i+1) * ones(size(time(id), 2), 2)), 's', 'MarkerSize', 7, 'MarkerFaceColor', colors{(i+1)/2}, 'Color', colors{(i+1)/2}, 'HandleVisibility', 'off');
-end
-
-% Plotting permutation tests
-for i = 1:length(permtests)
-    tmp = find(perm.(permtests{i})(1, :) < p);
-    id = tmp(consec_idx(tmp, thres));
-    plot(time(id), (yMin + offsetsperm(i)) * ones(size(time(id), 2), 2), 's', 'MarkerSize', 7, 'MarkerFaceColor', markersperm{i}, 'Color', markersperm{i}, 'HandleVisibility', 'off');
-end
-
-% Adding zero reference lines and title
-yLimits = ax.YLim;
-line([ax.XLim(1), ax.XLim(2)], [0, 0], 'Color', 'black', 'HandleVisibility', 'off');
-line([0, 0], [yLimits(1), yLimits(2)], 'Color', 'black', 'HandleVisibility', 'off');
-title('Reward phase, rewDS - Lever Press');  
-
+disp('Significant Time Windows:');
+disp(sig_windows);
+fprintf('Script Complete.\n');

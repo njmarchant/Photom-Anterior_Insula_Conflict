@@ -1,40 +1,57 @@
 %% Nathan Marchant, modified by request
 % Written for Pavlovian conflict task
 % Includes: plot individual subject traces for each cue type.
-% UPDATED: Now plots 4 conditions (Rew/Pun x Responded/Omitted)
+% UPDATED: Now plots 4 conditions for trials, 2 conditions for responses.
+% UPDATED: Selects specific trace windows and behavioral logic based on analysis type.
 
 % --- Initialization ---
 clear all;
 % close all; 
 
+% --- Set your Analysis Type ---
+analysis_type = 'response'; % Change this to 'trial' or 'response'
+
+% Determine the target trace field, plotting times, and logic based on type
+if strcmpi(analysis_type, 'trial')
+    target_trace_field = 'traces_zs_10_45';
+    time_start = -10;
+    time_end = 45;
+elseif strcmpi(analysis_type, 'response')
+    target_trace_field = 'traces_zs_25_15';
+    time_start = -25;
+    time_end = 15;
+else
+    error('Invalid analysis_type specified. Please enter ''trial'' or ''response''.');
+end
+
 % Define the folder to iterate through
-tankfolder = 'C:\Photometry\Conflict_04\Rew_(25-15)';
+tankfolder = 'C:\Photometry\Conflict_06\Raw data\Pun';
 filePath = fullfile(tankfolder);
 filesAndFolders = dir(fullfile(filePath));
 files = filesAndFolders(~[filesAndFolders.isdir]); 
 files(ismember({files.name}, {'.', '..'})) = [];
 
 % Define the phase you want to analyze
-SESSION_TO_ANALYZE = {'R01', 'R02','R03'}; 
+% SESSION_TO_ANALYZE = {'P06','P07', 'P08','P09','P10'}; 
+SESSION_TO_ANALYZE = {'P09','P10'}; 
+% SESSION_TO_ANALYZE = {'R06','R07','R08'};% 'R01','R02','R03','R04',
+% SESSION_TO_ANALYZE = {'C01','C02','C03','C04','C05'}; 
 
 fprintf('Loading data from folder: %s\n', tankfolder);
-% fprintf('Processing for phase: %s\n', SESSION_TO_ANALYZE);
+fprintf('Extracting trace field: %s for %s analysis.\n', target_trace_field, analysis_type);
 
 % --- Data Extraction and Processing per Subject ---
-% Define subjects
-% subjects = {'R01','R02','R05','R06','R07','R08','R09','R12','R13','R14'}; 
-subjects = {'R10','R11'}; 
-% subjects = {'R01','R02','R05'}; 
-% subjects = {'R06','R07','R08'}; 
-% subjects = {'R09','R12','R13','R14'}; 
+% subjects = {'C01','C03','C04','C10','C15'};
+subjects = {'R01','R02','R03','R04','R05','R07','R08'};
+% subjects = {'R16','R20','R17','R18','R19'};
 numSubjects = length(subjects);
 
 % Initialize a struct array to hold data for each subject
-% UPDATED: Added fields for Punishment (punDS)
 subjectData = repmat(struct('rat', '', ...
     'rewDS_C', [], 'rewDS_O', [], ...
-    'punDS_C', [], 'punDS_O', []), numSubjects, 1);
-
+    'punDS_C', [], 'punDS_O', [], ...
+    'rewDS_C_cue', []), numSubjects, 1);
+    
 % Pre-fill rat IDs
 for i = 1:numSubjects
     subjectData(i).rat = subjects{i};
@@ -45,31 +62,28 @@ TRACE_START_COL = 5;
 
 % Loop through each file in the folder
 for i = 1:length(files) 
-    fprintf('Processing file: %s\n', files(i).name);
-    load(fullfile(filePath,  [files(i).name])) 
-    
-    % Check if 'sesdat' was loaded
-    if ~exist('sesdat', 'var')
-        fprintf('Warning: Skipping file %s. No "sesdat" variable found.\n', files(i).name);
-        continue;
-    end
-    
-    % Check if the current file matches the desired phase
-    if isfield(sesdat, 'ses') && ismember(sesdat.ses, SESSION_TO_ANALYZE)
-        % Find the index corresponding to the current subject
+    names = strsplit(files(i).name, {'-' , '_', ' ', '.'}); %divide the file name into separte character vectors
+    rat = names {7};
+    session = names {4};
+    if ismember(rat,subjects) && ismember(session, SESSION_TO_ANALYZE)
+        fprintf('Processing file: %s\n', files(i).name);
+        load(fullfile(filePath,  [files(i).name])) 
+        
+        if ~exist('sesdat', 'var')
+            fprintf('Warning: Skipping file %s. No "sesdat" variable found.\n', files(i).name);
+            continue;
+        end
         subjectIdx = find(strcmp(subjects, sesdat.rat));
         
         if ~isempty(subjectIdx)
-            % Process trials from sesdat.traces_z
-            if isfield(sesdat, 'traces_z')
-                trialData = sesdat.traces_z;
+            if isfield(sesdat, target_trace_field)
+                trialData = sesdat.(target_trace_field); 
                 
                 if isempty(trialData)
                     clear sesdat; 
                     continue;
                 end
                 
-                % Check columns
                 if size(trialData, 2) < TRACE_START_COL
                     fprintf('Warning: Skipping file %s. Not enough columns.\n', files(i).name);
                     clear sesdat; 
@@ -78,37 +92,38 @@ for i = 1:length(files)
                 
                 numTrials = size(trialData, 1);
                 
-                % Loop through each trial (j)
+                % --- UPDATED BEHAVIORAL LOGIC LOOP ---
                 for j = 1:numTrials
                     trace = trialData(j, TRACE_START_COL:end);
-                    
-                    % --- UPDATED CONDITION LOGIC ---
-                    % Column 2: 1 = Reward, 2 = Punishment
-                    % Column 4: 1 = Responded, 0 = Omitted
-                    
+                    trace_cue = trialData(j, TRACE_START_COL:319);
+
                     trialType = trialData(j, 2);
                     outcome   = trialData(j, 4);
                     
-                    if trialType == 5 %&& outcome == 1
-                        % Reward Responded
-                        subjectData(subjectIdx).rewDS_C = [subjectData(subjectIdx).rewDS_C; trace];
+                    if strcmpi(analysis_type, 'trial')
+                        % Trial Logic
+                        if trialType == 1 && outcome == 1
+                            subjectData(subjectIdx).rewDS_C = [subjectData(subjectIdx).rewDS_C; trace];
+                        elseif trialType == 1 && outcome == 0
+                            subjectData(subjectIdx).rewDS_O = [subjectData(subjectIdx).rewDS_O; trace];
+                        elseif trialType == 2 && outcome == 1
+                            subjectData(subjectIdx).punDS_C = [subjectData(subjectIdx).punDS_C; trace];
+                        elseif trialType == 2 && outcome == 0
+                            subjectData(subjectIdx).punDS_O = [subjectData(subjectIdx).punDS_O; trace];
+                        end
                         
-                    elseif trialType == 1 && outcome == 0
-                        % Reward Omitted
-                        subjectData(subjectIdx).rewDS_O = [subjectData(subjectIdx).rewDS_O; trace];
-                        
-                    elseif trialType == 6 %&& outcome == 1
-                        % Punishment Responded
-                        subjectData(subjectIdx).punDS_C = [subjectData(subjectIdx).punDS_C; trace];
-                        
-                    elseif trialType == 2 && outcome == 0
-                        % Punishment Omitted
-                        subjectData(subjectIdx).punDS_O = [subjectData(subjectIdx).punDS_O; trace];
+                    elseif strcmpi(analysis_type, 'response')
+                        % Response Logic (No omissions)
+                        if trialType == 5 
+                            subjectData(subjectIdx).rewDS_C = [subjectData(subjectIdx).rewDS_C; trace];
+                        elseif trialType == 6 
+                            subjectData(subjectIdx).punDS_C = [subjectData(subjectIdx).punDS_C; trace];
+                        end
                     end
                 end
                 
             else
-                fprintf('Warning: Skipping file %s. "traces_z" not found.\n', files(i).name);
+                fprintf('Warning: Skipping file %s. "%s" not found.\n', files(i).name, target_trace_field);
             end
         end 
     end 
@@ -122,6 +137,7 @@ for i = 1:numSubjects
     if ~isempty(subjectData(i).rewDS_C); subjectData(i).rewDS_C_mean = mean(subjectData(i).rewDS_C, 1);
     else; subjectData(i).rewDS_C_mean = []; end
     
+   
     if ~isempty(subjectData(i).rewDS_O); subjectData(i).rewDS_O_mean = mean(subjectData(i).rewDS_O, 1);
     else; subjectData(i).rewDS_O_mean = []; end
     
@@ -134,10 +150,8 @@ for i = 1:numSubjects
 end
 
 % --- Plotting Setup ---
-% Determine time vector length based on any available data
 timePoints = 0;
 for i = 1:numSubjects
-    % Check all 4 fields to find a valid length
     if ~isempty(subjectData(i).rewDS_C_mean); timePoints = length(subjectData(i).rewDS_C_mean); break; 
     elseif ~isempty(subjectData(i).rewDS_O_mean); timePoints = length(subjectData(i).rewDS_O_mean); break;
     elseif ~isempty(subjectData(i).punDS_C_mean); timePoints = length(subjectData(i).punDS_C_mean); break;
@@ -149,63 +163,76 @@ if timePoints == 0
     error('No valid data found in any condition to create plots.'); 
 end
 
-time = linspace(-25, 15, timePoints);
-plotColors = lines(numSubjects); % Assign distinct color per rat
+time = linspace(time_start, time_end, timePoints);
+plotColors = lines(numSubjects); 
 
-%% Plot 1: rewDS Responded (Original)
-figure('Name', 'rewDS Responded');
+%% Plot 1: Reward Responded / Response
+figure('Name', 'Reward Trace');
 hold on;
 for i = 1:numSubjects
     if ~isempty(subjectData(i).rewDS_C_mean)
         plot(time, subjectData(i).rewDS_C_mean, 'Color', plotColors(i,:), 'LineWidth', 1.5);
     end
 end
-title(['rewDS Responded (Col2=1, Col4=1)']);
-xlabel('Time (s)'); ylabel('Z-score');
-line([0, 0], ylim, 'Color', 'k', 'LineStyle', '--');
-legend(subjects, 'Location', 'best');
-hold off;
-
-%% Plot 2: rewDS Omitted (Original)
-figure('Name', 'rewDS Omitted');
-hold on;
-for i = 1:numSubjects
-    if ~isempty(subjectData(i).rewDS_O_mean)
-        plot(time, subjectData(i).rewDS_O_mean, 'Color', plotColors(i,:), 'LineWidth', 1.5);
-    end
+if strcmpi(analysis_type, 'trial')
+    title('rewDS Responded (Col2=1, Col4=1) - TRIAL');
+else
+    title('Reward Response (Col2=5) - RESPONSE');
 end
-title(['rewDS Omitted (Col2=1, Col4=0)']);
 xlabel('Time (s)'); ylabel('Z-score');
 line([0, 0], ylim, 'Color', 'k', 'LineStyle', '--');
 legend(subjects, 'Location', 'best');
 hold off;
 
-%% Plot 3: punDS Responded (NEW)
-figure('Name', 'punDS Responded');
+%% Plot 3: Punishment Responded / Response
+figure('Name', 'Punishment Trace');
 hold on;
 for i = 1:numSubjects
     if ~isempty(subjectData(i).punDS_C_mean)
         plot(time, subjectData(i).punDS_C_mean, 'Color', plotColors(i,:), 'LineWidth', 1.5);
     end
 end
-title(['punDS Responded (Col2=2, Col4=1)']);
-xlabel('Time (s)'); ylabel('Z-score');
-line([0, 0], ylim, 'Color', 'k', 'LineStyle', '--');
-legend(subjects, 'Location', 'best');
-hold off;
-
-%% Plot 4: punDS Omitted (NEW)
-figure('Name', 'punDS Omitted');
-hold on;
-for i = 1:numSubjects
-    if ~isempty(subjectData(i).punDS_O_mean)
-        plot(time, subjectData(i).punDS_O_mean, 'Color', plotColors(i,:), 'LineWidth', 1.5);
-    end
+if strcmpi(analysis_type, 'trial')
+    title('punDS Responded (Col2=2, Col4=1) - TRIAL');
+else
+    title('Punishment Response (Col2=6) - RESPONSE');
 end
-title(['punDS Omitted (Col2=2, Col4=0)']);
 xlabel('Time (s)'); ylabel('Z-score');
 line([0, 0], ylim, 'Color', 'k', 'LineStyle', '--');
 legend(subjects, 'Location', 'best');
 hold off;
 
-fprintf('Done. 4 plots generated.\n');
+%% Plot 2 & 4: Omissions (TRIAL ONLY)
+if strcmpi(analysis_type, 'trial')
+    % Plot 2: rewDS Omitted
+    figure('Name', 'rewDS Omitted');
+    hold on;
+    for i = 1:numSubjects
+        if ~isempty(subjectData(i).rewDS_O_mean)
+            plot(time, subjectData(i).rewDS_O_mean, 'Color', plotColors(i,:), 'LineWidth', 1.5);
+        end
+    end
+    title('rewDS Omitted (Col2=1, Col4=0) - TRIAL');
+    xlabel('Time (s)'); ylabel('Z-score');
+    line([0, 0], ylim, 'Color', 'k', 'LineStyle', '--');
+    legend(subjects, 'Location', 'best');
+    hold off;
+
+    % Plot 4: punDS Omitted 
+    figure('Name', 'punDS Omitted');
+    hold on;
+    for i = 1:numSubjects
+        if ~isempty(subjectData(i).punDS_O_mean)
+            plot(time, subjectData(i).punDS_O_mean, 'Color', plotColors(i,:), 'LineWidth', 1.5);
+        end
+    end
+    title('punDS Omitted (Col2=2, Col4=0) - TRIAL');
+    xlabel('Time (s)'); ylabel('Z-score');
+    line([0, 0], ylim, 'Color', 'k', 'LineStyle', '--');
+    legend(subjects, 'Location', 'best');
+    hold off;
+
+  
+end
+
+fprintf('Done. Plots generated based on %s analysis.\n', analysis_type);

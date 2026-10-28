@@ -3,7 +3,7 @@
 %% define where the stuff is
 
 clear all
-tankfolder = 'C:\Photometry\Conflict_04\Raw data\Conf_(10-45)';
+tankfolder = 'C:\Photometry\Conflict_04\Raw Data\Conf_(25-15)';
 filePath = fullfile(tankfolder);
 allDat = cell(1,1);
 Rew_Resp = [];
@@ -13,7 +13,7 @@ Conf_Resp_F = [];
 Conf_Resp_S = [];
 
 tmp = [];
-condition = 'Conf Early';
+condition = 'Conf Late';
 % --- Session and Rat Definitions (Kept from Old Script) ---
 if strcmp(condition,'Conf Early')
     included_sessions = {'C01','C02','C03'}; %
@@ -24,17 +24,11 @@ s = char(condition);
 
 % Conf 04 Rats (Excluded R02, R09 'R01',)
 % Terminated Rats: ,'R10','R11'
+% Excluded due to traces'R01',
 % Rat = {'R05','R06','R07','R08','R10','R11','R12','R13','R14'};
-Rat = {'R01','R02','R05','R06','R07','R08','R09','R12','R13','R14'};
+Rat = {'R02','R05','R06','R07','R08','R09','R12','R13','R14'};
 
 
-
-s=char(condition);
-if strcmp(condition,'Conf Early')
-    included_sessions = {'C01','C02','C03','C04'};  
-else
-    included_sessions = {'C12','C13','C14','C15'}; 
-end
 
 filesAndFolders = dir(fullfile(filePath));
 files = filesAndFolders(~[filesAndFolders.isdir]); 
@@ -86,7 +80,7 @@ end
 
 %___________ Dimensions and labels used for the plots ______________
  
-    time = linspace(-10, 45, size(Rew_Resp, 2));
+    time = linspace(-25, 15, size(Rew_Resp, 2));
     Rew_Resp_completed = num2str(size(Rew_Resp,1));
     Rew_Resp_label = ['rewDS Trial - responded (', Rew_Resp_completed,')'];
     Pun_Resp_completed = num2str(size(Pun_Resp,1));

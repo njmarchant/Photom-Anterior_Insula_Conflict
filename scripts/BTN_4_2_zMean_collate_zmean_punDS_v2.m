@@ -11,7 +11,7 @@ close all;
 %  USER SETTINGS & RULES
 %  ========================================================================
 % 1. Set the path to the folder containing your processed .mat files
-dataFolder = 'C:\Photometry\Conflict_02 Photom\Conflict_02bc\punDS_(25-15)';
+dataFolder = 'C:\Photometry\Conflict_02 Photom\Conflict_02bc\punDS_(10-45)';
 
 % 2. Define where to save the final output files
 outputFolder = fullfile(dataFolder, 'collated_output_punish');
@@ -25,7 +25,7 @@ conf_02b_Rat = {'R09','R10','R13','R14','R16'};
 % -- Session IDs for each phase --
 % General Rules
 pun_early_sessions = {'P01','P02','P03','P04','P05'};
-pun_late_sessions = {'P06','P07','P08','P09','P10'};
+pun_late_sessions = {'P06','P07','P08','P09','P10','P11','P12','P13','P14','P15'};
 % Exceptions
 conf_02b_pun_late_sessions = {'P06','P07','P08','P09','P10','P11','P12','P13','P14','P15'};
 R11_pun_late_sessions = {'P04','P05','P06'};
