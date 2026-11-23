@@ -8,7 +8,7 @@ clear all
 close all
 %% define where the stuff is
 % Removed the specific time window from the folder path
-tankfolder = 'C:\Photometry\Conflict_06\Pun'; 
+tankfolder = 'C:\Photometry\Conflict_06b\Raw Data\Rew'; 
 
 %% define timestamps you wanna work with
 %!!!! REMEMBER TO CHECK THE NAMES OF THE VARIABBLES ON SESDAT

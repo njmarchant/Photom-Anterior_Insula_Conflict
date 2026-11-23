@@ -8,7 +8,7 @@ clear all;
 close all; % Good practice to close figures
 
 % --- Define the folder containing your extracted .mat files ---
-dataFolder = 'C:\Photometry\PavConf\Conflict_Extracted\Pavlovian conditioning conflict'; % <--- SET YOUR FOLDER PATH HERE
+dataFolder = 'C:\Photometry\Conflict_06b\Raw Data\Rew'; % <--- SET YOUR FOLDER PATH HERE
 files = dir(fullfile(dataFolder, '*.mat')); % Get a list of all .mat files
 
 % --- Extract all unique rat IDs from filenames ---

@@ -2,13 +2,13 @@
 
 %% 1. Configuration & Setup
 clear all
-tankfolder = 'C:\Photometry\Conflict_06\Raw data\Rew';
+tankfolder = 'C:\Photometry\Conflict_06b\Raw data\Rew';
 filePath = fullfile(tankfolder);
 
 % Define Subjects and Sessions
 % Rat = {'R01','R02','R03','R04','R05','R07','R08'};
-Rat = {'R01','R03','R04','R05','R08'};
-reward_sessions = {'R06','R07','R08','R04','R05'};
+Rat = {'R02','R03','R04','R05','R08'};
+reward_sessions = {'R01','R02','R03','R04','R05'};
 
 % Colours (RGB values / 255)
 c_rewDS = [0.12, 0.80, 0.01];
@@ -43,17 +43,17 @@ for i = 1:length(files) % Iterate through experiment folder
         % STREAMLINED LOGICAL INDEXING (Replaces the slow row-by-row for-loop)
         % Create logical vectors for conditions
         valid_rows = ~isnan(sesdat.traces_z_10_45(:, 5)); % Ignore rows with NaN in trace data
-        is_rew_cue = sesdat.traces_zs_10_45(:, 2) == 1;    % Col 2 = 1 (Reward Cue)
-        is_resp    = sesdat.traces_zs_10_45(:, 4) == 1;    % Col 4 = 1 (Responded)
-        is_omit    = sesdat.traces_zs_10_45(:, 4) == 0;    % Col 4 = 0 (Omitted)
+        is_rew_cue = sesdat.traces_z_10_45(:, 2) == 1;    % Col 2 = 1 (Reward Cue)
+        is_resp    = sesdat.traces_z_10_45(:, 4) == 1;    % Col 4 = 1 (Responded)
+        is_omit    = sesdat.traces_z_10_45(:, 4) == 0;    % Col 4 = 0 (Omitted)
         
         % Extract Responded Trials
         idx_resp = valid_rows & is_rew_cue & is_resp;
-        RatData.(rat).Rew_Trial = [RatData.(rat).Rew_Trial; sesdat.traces_zs_10_45(idx_resp, 5:323)];
+        RatData.(rat).Rew_Trial = [RatData.(rat).Rew_Trial; sesdat.traces_z_10_45(idx_resp, 5:323)];
         
         % Extract Omitted Trials
         idx_omit = valid_rows & is_rew_cue & is_omit;
-        RatData.(rat).Rew_Trial_Omit = [RatData.(rat).Rew_Trial_Omit; sesdat.traces_zs_10_45(idx_omit, 5:323)];
+        RatData.(rat).Rew_Trial_Omit = [RatData.(rat).Rew_Trial_Omit; sesdat.traces_z_10_45(idx_omit, 5:323)];
     end
 end
 

@@ -2,21 +2,20 @@
 %% Includes Subject Means, Minimum Trial Threshold and trace cropping
 %% 1. Configuration & Setup
 clear all
-tankfolder = 'C:\Photometry\Conflict_02 Photom\Conflict_02bc\rewDS_(10-45)\with_resp_traces';
+tankfolder = 'C:\Photometry\Conflict_06b\Raw Data\Rew';
 filePath = fullfile(tankfolder);
 
 % Define Subject Groupings & Session Rules
 rew_all = {'R01','R02','R03','R04','R05'};
 % R18 and R21 should be removed based on inspection of the daily traces
-Rat = {'R09','R10','R11','R12','R13','R14','R15','R16','R17','R19','R20','R22','R23', 'R24'};
-% Rat = {'R01','R02','R03','R04','R05','R07','R08'};
-% Rat = {'R01','R03','R04','R05','R08'};
+% Rat = {'R09','R10','R11','R12','R13','R14','R15','R16','R17','R19','R20','R22','R23', 'R24'};
+Rat = {'R02','R03','R04','R05','R06','R07','R08','R09','R10','R11','R12'};
 
 % Create a master list of all unique rats to initialize the data structure
 all_rats = unique(Rat);
 
 % Analysis Parameters
-min_trials = 5;   % Minimum number of trials required per rat to be included
+min_trials = 1;   % Minimum number of trials required per rat to be included
 crop_pre   = 15;  % s before the press to keep
 crop_post  = 15;  % s after the press to keep
 

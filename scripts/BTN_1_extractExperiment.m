@@ -10,8 +10,8 @@ close all
 fclose('all');
 
 %% --- 1. Configuration & Setup ---
-exp = 'Conflict_06'; 
-tankfolder = 'C:\Photometry\Conflict_06\Raw data';
+exp = 'Conflict_06b'; 
+tankfolder = 'C:\Photometry\Conflict_06b\Raw data';
 csv_filename = 'Conflict_06_sessions.csv'; 
 csv_path = fullfile(tankfolder, csv_filename);
 

@@ -26,7 +26,7 @@
 %   sesdat.traces_resp_meta_cols  column names for traces_resp_meta
 %% 1. Configuration
 clear all
-filePath = 'C:\Photometry\Conflict_04\Raw data\Pun_(10-45)';
+filePath = 'C:\Photometry\Conflict_06b\Raw Data\Rew';
 
 save_in_place = false;   % true: add fields to the existing .mat files (back them up first)
                         % false: write copies to out_folder
